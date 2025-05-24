@@ -1,4 +1,7 @@
+import asyncio
 import time
+from pprint import pprint
+
 from aiohttp import ClientSession
 from bs4 import BeautifulSoup
 
@@ -155,43 +158,44 @@ async def get_url_kino_poisk(search: str, session: ClientSession):
             raise f'Ошибка статуса кода: {response.status}'
 
 
-async def pars_json_kino_poisk(search: str) -> dict[str, list]:
-    '''
+async def get_url(url: str, session: ClientSession) -> str | None:
+    async with session.get(url) as response:
+        try:
+            js = await response.json()
+            # Более безопасная проверка структуры JSON
+            if isinstance(js, list) and len(js) > 2 and isinstance(js[2], dict):
+                return js[2].get('iframeUrl')
+            return None
+        except (AttributeError, KeyError, IndexError, ValueError):
+            return None
 
-    :param search:
-    :return:
-    '''
+
+async def pars_json_kino_poisk(search: str) -> dict[str, list]:
     start = time.time()
     async with ClientSession() as session:
         dct = await get_url_kino_poisk(search, session)
         data_id = dct['id_movies']
-        lst_api_movie = []
 
-        for id_kino in data_id:
+        tasks = [get_url(f'https://fbphdplay.top/api/players?kinopoisk={id_kino}', session)
+                 for id_kino in data_id]
+        lst_api_movie = await asyncio.gather(*tasks)  # Убрали лишнюю обертку в список
 
-            base_url = f'https://fbphdplay.top/api/players?kinopoisk={id_kino}'
-            async with session.get(base_url) as response:
+        # Очистка данных - более безопасный способ
+        new_dct = {
+            'movies': [],
+            'api_urls': [],
+            'imgs': []
+        }
 
-                if response.status == 200:
-                    try:
-                        js = await response.json()
-                        obj = js[2]['iframeUrl']
-                        lst_api_movie.append(obj)
-                    except AttributeError:
-                        lst_api_movie.append(None)
+        for movie, api_url, img in zip(dct['movies'], lst_api_movie, dct['imgs']):
+            if api_url is not None:
+                new_dct['movies'].append(movie)
+                new_dct['api_urls'].append(api_url)
+                new_dct['imgs'].append(img)
 
-        dct['api_urls'] = lst_api_movie
-    # Очистка данных
-    new_dct = {
-        'movies': [],
-        'api_urls': [],
-        'imgs': []
-    }
-    for i in range(len(dct['api_urls'])):
-        if dct['api_urls'][i] is not None:
-            new_dct['movies'].append(dct['movies'][i])
-            new_dct['api_urls'].append(dct['api_urls'][i])
-            new_dct['imgs'].append(dct['imgs'][i])
     end = time.time()
-    print(f'Парсер сработал: {end-start:.2f}')
+    print(f'Парсер сработал: {end - start:.2f}')
     return new_dct
+
+
+pprint(asyncio.run(pars_json_kino_poisk('Пила')))
