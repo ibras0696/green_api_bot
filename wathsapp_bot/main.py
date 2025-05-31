@@ -1,11 +1,6 @@
-import asyncio
 
-import requests
-from aiohttp import ClientSession
-from whatsapp_chatbot_python import GreenAPIBot, Notification, BaseStates
+from whatsapp_chatbot_python import GreenAPIBot, Notification
 from whatsapp_chatbot_python.filters import TEXT_TYPES
-from enum import Enum
-
 from wathsapp_bot.config import ID_INSTANCE, API_TOKEN
 from wathsapp_bot.states.user_state import SearchState
 # Убедитесь, что функция синхронная
@@ -34,6 +29,7 @@ def cancel_handler(notification: Notification) -> None:
 
     print("State after cancel:", notification.state_manager.get_state(sender))
 
+
 # @bot.router.message(command="search")
 @bot.router.message(text_message='000')
 def pars_handler(notification: Notification):
@@ -45,18 +41,11 @@ def pars_handler(notification: Notification):
 
     print("State after set:", notification.state_manager.get_state(sender))
 
+
 @bot.router.message(state=SearchState.SEARCH.value, type_message=TEXT_TYPES)
 def pars_search_handler(notification: Notification):
     sender = notification.sender
     notification.answer("Сбор данных подождите пожалуйста! ")
-
-
-    print(f"\n--- Search state handler for {sender} ---")
-    print("Current state:", notification.state_manager.get_state(sender))
-
-    query = notification.message_text
-    print("Received query:", query)
-
     try:
         # Сохраняем текст от пользователя
         query = notification.message_text
@@ -72,10 +61,8 @@ def pars_search_handler(notification: Notification):
         notification.answer("Фильмы не найдены")
     finally:
         notification.state_manager.delete_state(sender)
-        print("State after processing:", notification.state_manager.get_state(sender))
 
 
-print("\nStarting bot...")
 if __name__ == '__main__':
     import logging
     logging.basicConfig(level=logging.INFO)
