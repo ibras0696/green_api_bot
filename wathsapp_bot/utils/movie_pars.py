@@ -1,5 +1,6 @@
 import asyncio
 import time
+from pprint import pprint
 
 from aiohttp import ClientSession
 from bs4 import BeautifulSoup
@@ -103,12 +104,13 @@ async def get_movie_result(search: str) -> dict[str, list]:
 
 
 
-async def get_url_kino_poisk(search: str, session: ClientSession) -> dict[str, list]:
+async def get_url_kino_poisk(search: str, session: ClientSession, limit: int = 3) -> dict[str, list]:
     '''
     Парсинг Данных с Кино Поиск основной смысл Парсера: Сбор данных таких как Название, Уникальный айди фильма, не прямая ссылка для кино, не качественная ссылка на фотку
 
     :param search: Поисковой запрос по типу: Дэдпул2
     :param session: Основная Сессия для запуска aiohttp . ClientSession()
+    :param limit: Лимит на запросы
     :return: Словарь data = {
                 'movies': [],
                 'id_movies': [],
@@ -146,12 +148,13 @@ async def get_url_kino_poisk(search: str, session: ClientSession) -> dict[str, l
                     id_movie = block_search_results.find('a', class_='js-serp-metrika').get('href').replace('https://www.kinopoisk.ru/images/sm_film/film/', '').replace('/cast/#actor', '').replace('/film/', '').replace('/sr/1/', '')
                     # Не качественная ссылка на фотку
                     img = 'https://www.kinopoisk.ru'+block_search_results.find('img').get('title')
-
-                    data['movies'].append(movie)
-                    data['id_movies'].append(id_movie)
-                    data['links'].append(link)
-                    data['imgs'].append(img)
-
+                    if len(data['movies']) != limit:
+                        data['movies'].append(movie)
+                        data['id_movies'].append(id_movie)
+                        data['links'].append(link)
+                        data['imgs'].append(img)
+                    else:
+                        break
                 else:
                     # Основной Блок с фильмом
                     block_search_results = soup[i].find_all('div', class_='element')
@@ -163,10 +166,13 @@ async def get_url_kino_poisk(search: str, session: ClientSession) -> dict[str, l
                             ).replace('/cast/#actor', '').replace('/film/', '').replace('/sr/1/', '')
                         img = 'https://www.kinopoisk.ru' + elem.find('img').get('title')
 
-                        data['movies'].append(movie)
-                        data['id_movies'].append(id_movie)
-                        data['links'].append(link)
-                        data['imgs'].append(img)
+                        if len(data['movies']) != limit:
+                            data['movies'].append(movie)
+                            data['id_movies'].append(id_movie)
+                            data['links'].append(link)
+                            data['imgs'].append(img)
+                        else:
+                            break
             return data
         else:
             raise f'Ошибка статуса кода: {response.status}'
@@ -206,17 +212,18 @@ async def get_photo_url(url_png: str | int, session: ClientSession) -> str:
            return ''
 
 
-async def pars_json_kino_poisk(search: str) -> dict[str, list]:
+async def pars_json_kino_poisk(search: str, limit: int = 3) -> dict[str, list]:
     '''
-    Основной Парсер для получение качественных данных на выходе
+    Основной Парсер для получения качественных данных на выходе
     :param search: Поисковой запрос например: Дэдпул
+    :param limit: Лимит на получение данных
     :return:  new_dct = {
             'movies': [], # Название фильмов
             'api_urls': [], # url по апи
-            'imgs': [] # Ссылки на качественные фотки
+            'imgs': [] # Ссылки на качественные фотографии
         }
     '''
-    start = time.time()
+    # start = time.time()
     async with ClientSession() as session:
         try:
             dct = await get_url_kino_poisk(search, session)
@@ -245,13 +252,17 @@ async def pars_json_kino_poisk(search: str) -> dict[str, list]:
             'imgs': []
         }
         # Сохранение все в словарь и возврат
+        numb_limit = 0
         for movie, api_url, img in zip(dct['movies'], lst_api_movie, pngs):
             if api_url is not None:
                 new_dct['movies'].append(movie)
                 new_dct['api_urls'].append(api_url)
                 new_dct['imgs'].append(img)
+                numb_limit += 1
+            if numb_limit == limit:
+                break
 
-        end = time.time()
-        print(f'Парсер сработал: {end - start:.2f}')
+        # end = time.time()
+        # print(f'Парсер сработал: {end - start:.2f}')
         return new_dct
 

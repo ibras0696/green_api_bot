@@ -1,8 +1,9 @@
 import asyncio
+import time
 
 from aiohttp import ClientSession
 
-from wathsapp_bot.config import URL_SEND
+from wathsapp_bot.config import URL_SEND_IMG, URL_SEND_TEXT
 
 
 # Функция для отправки фото
@@ -24,10 +25,32 @@ async def send_message_img(chat_id: str | int = None, image_url: str = None, cap
     headers = {
         'Content-Type': 'application/json'
     }
-    async with session.post(URL_SEND, headers=headers, json=payload) as response:
+    async with session.post(URL_SEND_IMG, headers=headers, json=payload) as response:
         if response.status == 200:
             return True
     return False
+
+# Функция для отправки Текста
+async def send_message_text(chat_id: str | int = None, message_text: str = None) -> bool:
+    '''
+    Отправка Одного сообщения: текста, фотки по url пользователю ватцап
+    :param chat_id: номер владельца например: 79323056361@c.us
+    :param message_text: Текст для отправки
+    :return: True если сообщение отправилось если нет False
+    '''
+    payload = {
+        "chatId": f"{chat_id}",
+        "message": message_text,
+    }
+    headers = {
+        'Content-Type': 'application/json'
+    }
+    async with ClientSession() as session:
+        async with session.post(URL_SEND_TEXT, headers=headers, json=payload) as response:
+            if response.status == 200:
+                return True
+        print(response.status)
+        return False
 
 
 async def send_image_and_message(number_user: int | str, dct_send: dict[str, list]) -> bool | str:
@@ -37,10 +60,11 @@ async def send_image_and_message(number_user: int | str, dct_send: dict[str, lis
     :param dct_send: Словарь со значениями new_dct = {
             'movies': [], # Название фильмов
             'api_urls': [], # url по апи
-            'imgs': [] # Ссылки на качественные фотки
+            'imgs': [] # Ссылки на качественные фотографии
         }
     :return: True если все сообщения отправились и Ошибка в случае Exception
     '''
+    start = time.time()
     async with ClientSession() as session:
         try:
             tasks = [send_message_img(chat_id=number_user,
@@ -54,3 +78,6 @@ async def send_image_and_message(number_user: int | str, dct_send: dict[str, lis
             return f'Ошибка: {ex} \nПри отправке сообщении с img в ватцап'
         else:
             return True
+        finally:
+            end = time.time()
+            print(f'Сообщения отправились сек: {end - start:.2f}')

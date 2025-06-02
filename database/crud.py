@@ -1,15 +1,14 @@
 import asyncio
 import datetime
-from pprint import pprint
+
 
 from sqlalchemy.exc import IntegrityError
-from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 
-from db import async_session, init_db
-from models import User
+from database.db import async_session
+from database.models import User
 
-asyncio.run(init_db())
+
 # Функция добавления подписки
 # async def add_subscription(user_id: int, days: int = 3) -> Subscription:
 #     '''
@@ -59,7 +58,7 @@ asyncio.run(init_db())
 
 # Добавление пользователя (Telegram или WhatsApp)
 # Если существует — пропускаем, иначе создаём с +5 дней подписки
-async def async_add_user(telegram_id: int = None, whatsapp_id: str = None, days: int = 5):
+async def async_add_user(telegram_id: int = None, whatsapp_id: str = None, days: int = 5) -> bool:
     '''
     Функция для добавления пользователей в бд
 
@@ -81,7 +80,7 @@ async def async_add_user(telegram_id: int = None, whatsapp_id: str = None, days:
         user = result.scalar_one_or_none()
 
         if user:
-            return user  # Пользователь уже есть
+            return False  # Пользователь уже есть
 
         # Создаём нового пользователя с 5 днями подписки
         new_user = User(
@@ -94,14 +93,10 @@ async def async_add_user(telegram_id: int = None, whatsapp_id: str = None, days:
         session.add(new_user)
         try:
             await session.commit()
-            return new_user
+            return True
         except IntegrityError:
             await session.rollback()
             return None
-
-
-print(asyncio.run(async_add_user(telegram_id=124, days=100)))
-print(asyncio.run(async_add_user(whatsapp_id='12sda4', days=100)))
 
 
 # Проверка, активна ли подписка пользователя
@@ -132,7 +127,7 @@ async def check_subscription(user_id: int | str) -> bool:
 async def decrement_subscriptions(min_day: int = 1):
     '''
     Функция для уменьшения подписки на 1 день
-    :param min_day: Количество для уменьшении дней по дефолту 1
+    :param min_day: Количество для уменьшения дней по дефолту 1
     :return: True при успешном снижении
     '''
     async with async_session() as session:
@@ -190,4 +185,42 @@ async def get_all_users(get: int = 1) -> list[dict] | dict[str, list]:
                 dct["created_at"].append(user.created_at)
             return dct
 
+
+# Получение всех пользователей и их данных в виде словаря
+async def get_user(user_id: int | str) -> dict[str, str | int | bool]:
+    '''
+    Функция для получения данных одного пользователя
+    :param user_id: user_id: int = Telegram_id а str = WhatsApp_id
+    :return: {
+                "id": user.id,
+                "telegram_id": user.telegram_id,
+                "whatsapp_id": user.whatsapp_id,
+                "day_count": user.day_count,
+                "is_active": user.is_active,
+                "created_at": user.created_at.isoformat()}
+    '''
+    if not isinstance(user_id, (int, str)):
+        raise ValueError("user_id должен быть int (Telegram) или str (WhatsApp)")
+
+    async with async_session() as session:
+        # Определяем условие поиска в зависимости от типа user_id
+        if isinstance(user_id, int):
+            stmt = select(User).where(User.telegram_id == user_id)
+        else:
+            stmt = select(User).where(User.whatsapp_id == user_id)
+
+        result = await session.execute(stmt)
+        user = result.scalars().first()
+        # Проверка: найден ли пользователь
+        if user is None:
+            print(f"⚠️ Пользователь с ID {user_id} не найден.")
+            return None
+
+        return {
+                "id": user.id,
+                "telegram_id": user.telegram_id,
+                "whatsapp_id": user.whatsapp_id,
+                "day_count": user.day_count,
+                "is_active": user.is_active,
+                "created_at": user.created_at.isoformat()}
 
