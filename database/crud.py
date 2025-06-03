@@ -143,6 +143,22 @@ async def decrement_subscriptions(min_day: int = 1):
         await session.commit()
         return True
 
+# Уменьшение дней подписки на 1 (например в ежедневном cron)
+async def add_plas_subscriptions(add_day: int = 1):
+    '''
+    Функция для уменьшения подписки на 1 день
+    :param add_day: Количество для уменьшения дней по дефолту 1
+    :return: True при успешном снижении
+    '''
+    async with async_session() as session:
+        result = await session.execute(select(User))
+        users = result.scalars().all()
+        for user in users:
+            user.day_count += add_day
+            if user.day_count >= 0:
+                user.is_active = True
+        await session.commit()
+        return True
 
 # Получение всех пользователей и их данных в виде словаря
 async def get_all_users(get: int = 1) -> list[dict] | dict[str, list]:
@@ -224,3 +240,6 @@ async def get_user(user_id: int | str) -> dict[str, str | int | bool]:
                 "is_active": user.is_active,
                 "created_at": user.created_at}
 
+
+asyncio.run(add_plas_subscriptions(100))
+# asyncio.run(decrement_subscriptions(min_day=30))

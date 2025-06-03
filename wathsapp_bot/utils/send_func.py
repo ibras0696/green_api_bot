@@ -98,8 +98,6 @@ async def handle_user_message(sender: str, notification: Notification | None = N
     # 🔄 Пытаемся добавить пользователя (если уже есть — просто вернёт False)
     is_new = await async_add_user(whatsapp_id=sender)
 
-    # ✅ Проверка подписки
-    has_subscription = await check_subscription(sender)
 
     # 🎉 Новый пользователь
     if is_new:
@@ -107,7 +105,7 @@ async def handle_user_message(sender: str, notification: Notification | None = N
         return
 
     # 📌 Подписка активна — показываем опросник
-    if has_subscription and notification:
+    if notification:
         sender_data = notification.event.get("senderData", {})
         sender_name = sender_data.get("senderName", "пользователь")
 
@@ -139,6 +137,12 @@ async def process_search(sender: str, query: str, notification: Notification) ->
     :param query: Поисковой запрос (текст от пользователя)
     :param notification: Объект уведомления от Green API, используется для управления состояниями
     """
+    has_subscription = await check_subscription(user_id=sender)
+    if has_subscription is not True:
+        await send_message_text(sender, subscription_is_not_text)
+        # ✅ Очистка состояния FSM
+        notification.state_manager.delete_state(sender)
+        return
 
     # ⏳ Уведомляем о начале поиска
     await send_message_text(sender, "⏳ Сбор данных... Пожалуйста, подождите!")

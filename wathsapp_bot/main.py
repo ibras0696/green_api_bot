@@ -1,7 +1,7 @@
-import asyncio
+
 import logging
 import threading
-from pprint import pprint
+
 
 from whatsapp_chatbot_python import GreenAPIBot, Notification
 from whatsapp_chatbot_python.filters import TEXT_TYPES
