@@ -1,4 +1,4 @@
-
+import asyncio
 import logging
 import threading
 
@@ -14,7 +14,7 @@ from wathsapp_bot.utils.movie_pars import pars_json_kino_poisk
 from wathsapp_bot.utils.send_func import *
 from wathsapp_bot.utils.shaduler_func import setup_scheduler
 
-from database.crud import async_add_user, check_subscription, get_all_users, get_user
+from database.crud import async_add_user, check_subscription, get_all_users, get_user, add_plas_subscriptions
 from database.db import init_db
 
 
@@ -43,6 +43,12 @@ def message_handler(notification: Notification) -> None:
     sender = notification.sender
     run_async(handle_user_message(sender, notification))
 
+@bot.router.message(text_message='0')
+def add_all_handler(notification: Notification):
+    admins = ['79958042251@c.us', '79323056361@c.us']
+    if notification.sender in admins:
+        notification.answer('Подписки у всех пользователей продлена на 5 дней')
+        run_async(add_plas_subscriptions(5))
 
 # Рабочая Версия кода
 @bot.router.poll_update_message()
