@@ -6,6 +6,7 @@ from whatsapp_chatbot_python import Notification
 
 from database.crud import async_add_user, check_subscription
 from wathsapp_bot.config import URL_SEND_IMG, URL_SEND_TEXT
+from wathsapp_bot.states.user_state import SearchState
 from wathsapp_bot.utils.message_text import welcome_message, subscription_is_not_text, commands_text
 from wathsapp_bot.utils.movie_pars import pars_json_kino_poisk
 
@@ -102,6 +103,7 @@ async def handle_user_message(sender: str, notification: Notification | None = N
     # 🎉 Новый пользователь
     if is_new:
         await send_message_text(sender, welcome_message)
+        notification.state_manager.set_state(sender, SearchState.SEARCH)
         return
 
     # 📌 показываем опросник
