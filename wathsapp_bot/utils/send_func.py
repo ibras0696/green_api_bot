@@ -104,7 +104,7 @@ async def handle_user_message(sender: str, notification: Notification | None = N
         await send_message_text(sender, welcome_message)
         return
 
-    # 📌 Подписка активна — показываем опросник
+    # 📌 показываем опросник
     if notification:
         sender_data = notification.event.get("senderData", {})
         sender_name = sender_data.get("senderName", "пользователь")
@@ -117,10 +117,6 @@ async def handle_user_message(sender: str, notification: Notification | None = N
                 {"optionName": "3. Покупка Подписки"},
             ]
         )
-
-    # 🚫 Подписка неактивна
-    else:
-        await send_message_text(sender, subscription_is_not_text)
 
 
 async def process_search(sender: str, query: str, notification: Notification) -> None:
@@ -164,12 +160,20 @@ async def process_search(sender: str, query: str, notification: Notification) ->
         await send_message_text(sender, "😢 Фильмы не найдены. Попробуйте изменить запрос")
 
     finally:
+        sender_data = notification.event.get("senderData", {})
+        sender_name = sender_data.get("senderName", "пользователь")
         # ✅ Очистка состояния FSM
         notification.state_manager.delete_state(sender)
 
         # 📋 Отправка командного меню
-        await send_message_text(sender, commands_text)
+        notification.answer_with_poll(
+            f"Привет, {sender_name}\n\n🔍 Меню Бота",
+            [
+                {"optionName": "1. Поиск Фильмов"},
+                {"optionName": "2. Личный Кабинет"},
+                {"optionName": "3. Покупка Подписки"},
+            ]
+        )
 
 
-
-
+# print(asyncio.run(send_message_text('79958042251@c.us', 'йоу')))

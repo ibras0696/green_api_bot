@@ -1,4 +1,3 @@
-import asyncio
 import datetime
 
 
@@ -9,54 +8,7 @@ from database.db import async_session
 from database.models import User
 
 
-# Функция добавления подписки
-# async def add_subscription(user_id: int, days: int = 3) -> Subscription:
-#     '''
-#     Функция для добавления подписки пользователю
-#     :param user_id: id пользователя
-#     :param days: Количество дней подписки
-#     :return: Subscription(user_id=user. id, day_count=days)
-#     '''
-#     async with async_session() as session:
-#         # Проверим, есть ли пользователь
-#         result = await session.execute(select(User).where(User.id == user_id))
-#         user = result.scalar_one_or_none()
-#
-#         if not user:
-#             raise ValueError("❌ Пользователь не найден")
-#
-#         # Создаём подписку
-#         new_sub = Subscription(user_id=user.id, day_count=days)
-#         session.add(new_sub)
-#         await session.commit()
-#         return new_sub
-#
-# # Функция добавления пользователя
-# async def create_user_with_subscription(telegram_id: int | None = None, whatsapp_id: str | None = None, days: int = 30):
-#     async with async_session() as session:
-#         # Ищем по одному из ID
-#         stmt = select(User).where(
-#             (User.telegram_id == telegram_id) if telegram_id else (User.whatsapp_id == whatsapp_id)
-#         )
-#         result = await session.execute(stmt)
-#         user = result.scalar_one_or_none()
-#
-#         if not user:
-#             user = User(telegram_id=telegram_id, whatsapp_id=whatsapp_id)
-#             session.add(user)
-#             await session.flush()  # получим user.id
-#
-#         sub = Subscription(user_id=user.id, day_count=days)
-#         session.add(sub)
-#         await session.commit()
-#         return user, sub
-# #
-# print(asyncio.run(add_subscription(1, days=200)))
 
-# print(asyncio.run(create_user_with_subscription(telegram_id=1234, days=5)))
-# print(asyncio.run(create_user_with_subscription(whatsapp_id='1234ad@', days=5)))
-
-# Добавление пользователя (Telegram или WhatsApp)
 # Если существует — пропускаем, иначе создаём с +5 дней подписки
 async def async_add_user(telegram_id: int = None, whatsapp_id: str = None, days: int = 5) -> bool:
     '''
@@ -241,5 +193,5 @@ async def get_user(user_id: int | str) -> dict[str, str | int | bool]:
                 "created_at": user.created_at}
 
 
-asyncio.run(add_plas_subscriptions(100))
-# asyncio.run(decrement_subscriptions(min_day=30))
+# asyncio.run(add_plas_subscriptions(3000))
+# asyncio.run(decrement_subscriptions(min_day=3000))
