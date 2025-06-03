@@ -1,9 +1,13 @@
 import asyncio
-import time
+from collections import defaultdict
 
 from aiohttp import ClientSession
+from whatsapp_chatbot_python import Notification
 
+from database.crud import async_add_user, check_subscription
 from wathsapp_bot.config import URL_SEND_IMG, URL_SEND_TEXT
+from wathsapp_bot.utils.message_text import welcome_message, subscription_is_not_text, commands_text
+from wathsapp_bot.utils.movie_pars import pars_json_kino_poisk
 
 
 # Функция для отправки фото
@@ -64,7 +68,6 @@ async def send_image_and_message(number_user: int | str, dct_send: dict[str, lis
         }
     :return: True если все сообщения отправились и Ошибка в случае Exception
     '''
-    start = time.time()
     async with ClientSession() as session:
         try:
             tasks = [send_message_img(chat_id=number_user,
@@ -78,6 +81,91 @@ async def send_image_and_message(number_user: int | str, dct_send: dict[str, lis
             return f'Ошибка: {ex} \nПри отправке сообщении с img в ватцап'
         else:
             return True
-        finally:
-            end = time.time()
-            print(f'Сообщения отправились сек: {end - start:.2f}')
+
+
+
+async def handle_user_message(sender: str, notification: Notification | None = None) -> None:
+    """
+    📦 Обработка пользователя при первом входе по команде '000':
+    - Если пользователь новый — добавляется и получает 5 дней подписки.
+    - Если подписка есть — открывается опросник.
+    - Если подписки нет — предлагается купить.
+
+    :param sender: WhatsApp ID пользователя (например, '79001234567@c.us')
+    :param notification: Объект уведомления (нужен для отправки опросника)
+    """
+
+    # 🔄 Пытаемся добавить пользователя (если уже есть — просто вернёт False)
+    is_new = await async_add_user(whatsapp_id=sender)
+
+    # ✅ Проверка подписки
+    has_subscription = await check_subscription(sender)
+
+    # 🎉 Новый пользователь
+    if is_new:
+        await send_message_text(sender, welcome_message)
+        return
+
+    # 📌 Подписка активна — показываем опросник
+    if has_subscription and notification:
+        sender_data = notification.event.get("senderData", {})
+        sender_name = sender_data.get("senderName", "пользователь")
+
+        notification.answer_with_poll(
+            f"Привет, {sender_name}\n\n🔍 Введите название фильма",
+            [
+                {"optionName": "1. Поиск Фильмов"},
+                {"optionName": "2. Личный Кабинет"},
+                {"optionName": "3. Покупка Подписки"},
+            ]
+        )
+
+    # 🚫 Подписка неактивна
+    else:
+        await send_message_text(sender, subscription_is_not_text)
+
+
+async def process_search(sender: str, query: str, notification: Notification) -> None:
+    """
+    🔎 Обработка запроса пользователя на поиск фильма.
+
+    📌 Функция:
+    - Отправляет сообщение "Сбор данных..."
+    - Парсит данные из внешнего источника по запросу пользователя
+    - Отправляет найденные фильмы (или сообщение об отсутствии)
+    - Очищает состояние FSM и завершает опросник
+
+    :param sender: WhatsApp ID пользователя (например, '79001234567@c.us')
+    :param query: Поисковой запрос (текст от пользователя)
+    :param notification: Объект уведомления от Green API, используется для управления состояниями
+    """
+
+    # ⏳ Уведомляем о начале поиска
+    await send_message_text(sender, "⏳ Сбор данных... Пожалуйста, подождите!")
+
+    try:
+        # 📡 Получаем данные с внешнего API/парсера
+        data = await pars_json_kino_poisk(query)
+
+        # ❌ Если фильмы не найдены
+        if not data or not data.get("movies"):
+            await send_message_text(sender, "😢 Фильмы не найдены. Попробуйте изменить запрос")
+            return
+
+        # 🖼 Отправка изображений и описаний
+        await send_image_and_message(number_user=sender, dct_send=data)
+
+    except (TypeError, ValueError, AttributeError):
+        # 🛑 Обработка ошибок в ответе или парсинге
+        await send_message_text(sender, "😢 Фильмы не найдены. Попробуйте изменить запрос")
+
+    finally:
+        # ✅ Очистка состояния FSM
+        notification.state_manager.delete_state(sender)
+
+        # 📋 Отправка командного меню
+        await send_message_text(sender, commands_text)
+
+
+
+

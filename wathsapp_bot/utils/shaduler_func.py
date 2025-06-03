@@ -6,7 +6,7 @@ from apscheduler.triggers.cron import CronTrigger            # Триггер, �
 from pytz import timezone
 
 from database.crud import decrement_subscriptions, get_all_users
-from wathsapp_bot.utils.send_func import send_message_text
+from wathsapp_bot.utils.send_func import *
 
 #
 # async def daily_subscription_whatsapp():

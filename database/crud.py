@@ -222,5 +222,5 @@ async def get_user(user_id: int | str) -> dict[str, str | int | bool]:
                 "whatsapp_id": user.whatsapp_id,
                 "day_count": user.day_count,
                 "is_active": user.is_active,
-                "created_at": user.created_at.isoformat()}
+                "created_at": user.created_at}
 
