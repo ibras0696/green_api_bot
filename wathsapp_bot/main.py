@@ -7,12 +7,12 @@ from whatsapp_chatbot_python import GreenAPIBot, Notification
 from whatsapp_chatbot_python.filters import TEXT_TYPES
 
 from wathsapp_bot.config import ID_INSTANCE, API_TOKEN
-from states.user_state import SearchState
-from utils.async_bot_manager import start_async_loop, run_async
-from utils.message_text import welcome_message, subscription_is_not_text, profile_message, commands_text
-from utils.movie_pars import pars_json_kino_poisk
-from utils.send_func import *
-from utils.shaduler_func import setup_scheduler
+from wathsapp_bot.states.user_state import SearchState
+from wathsapp_bot.utils.async_bot_manager import start_async_loop, run_async
+from wathsapp_bot.utils.message_text import welcome_message, subscription_is_not_text, profile_message, commands_text
+from wathsapp_bot.utils.movie_pars import pars_json_kino_poisk
+from wathsapp_bot.utils.send_func import *
+from wathsapp_bot.utils.shaduler_func import setup_scheduler
 
 from database.crud import async_add_user, check_subscription, get_all_users, get_user, add_plas_subscriptions
 from database.db import init_db
