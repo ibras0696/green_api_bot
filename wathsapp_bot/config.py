@@ -1,7 +1,17 @@
+import os
+import dotenv
+
+dotenv.load_dotenv()
+
+# id инстейнса
+ID_INSTANCE = os.getenv('ID_INSTANCE')
+# Токен Ватцап
+API_TOKEN = os.getenv('API_TOKEN')
+# url отправки фоток
+URL_SEND_IMG = os.getenv('URL_SEND_IMG')
+# url отправки сообщений
+URL_SEND_TEXT = os.getenv('URL_SEND_TEXT')
 
 
 
-ID_INSTANCE = "1103197563"
-API_TOKEN = "f7aabbc0ed3b44b9b1d89a90744b3d7b2e88a73f91fc4fb984"
-URL_SEND_IMG = "https://1103.api.green-api.com/waInstance1103197563/sendFileByUrl/f7aabbc0ed3b44b9b1d89a90744b3d7b2e88a73f91fc4fb984"
-URL_SEND_TEXT = "https://1103.api.green-api.com/waInstance1103197563/sendMessage/f7aabbc0ed3b44b9b1d89a90744b3d7b2e88a73f91fc4fb984"
+

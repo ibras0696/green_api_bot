@@ -29,6 +29,7 @@ commands_text = '''
 📋 Команды:  
     000 – Меню Бота 
 '''.strip()
+
 subscription_is_not_text = """
 📛 Ваша подписка закончилась
 

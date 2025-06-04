@@ -22,21 +22,6 @@ from database.db import init_db
 bot = GreenAPIBot(ID_INSTANCE, API_TOKEN)
 
 
-
-
-# Декоратор для Очистки Состояния
-# @bot.router.message(command="cancel")
-# def cancel_handler(notification: Notification) -> None:
-#     sender = notification.sender
-#     print(f"\n--- Cancel handler for {sender} ---")
-#     print("Current state:", notification.state_manager.get_state(sender))
-#
-#
-#     notification.answer("Bye")
-#
-#     print("State after cancel:", notification.state_manager.get_state(sender))
-
-
 # Работа с меню
 @bot.router.message(text_message='000')
 def message_handler(notification: Notification) -> None:

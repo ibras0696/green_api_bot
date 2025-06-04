@@ -10,7 +10,7 @@ from database.models import User
 
 
 # Если существует — пропускаем, иначе создаём с +5 дней подписки
-async def async_add_user(telegram_id: int = None, whatsapp_id: str = None, days: int = 5) -> bool:
+async def async_add_user(telegram_id: int = None, whatsapp_id: str = None, days: int = 3) -> bool:
     '''
     Функция для добавления пользователей в бд
 
