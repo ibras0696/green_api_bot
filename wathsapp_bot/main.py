@@ -6,7 +6,7 @@ import threading
 from whatsapp_chatbot_python import GreenAPIBot, Notification
 from whatsapp_chatbot_python.filters import TEXT_TYPES
 
-from config import ID_INSTANCE, API_TOKEN
+from wathsapp_bot.config import ID_INSTANCE, API_TOKEN
 from states.user_state import SearchState
 from utils.async_bot_manager import start_async_loop, run_async
 from utils.message_text import welcome_message, subscription_is_not_text, profile_message, commands_text
