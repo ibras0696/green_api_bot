@@ -22,9 +22,6 @@ class User(Base):
     is_active = Column(Boolean, default=True)  # Активна или нет
     created_at = Column(DateTime, default=datetime.utcnow)  # Дата создания
 
-    # # Связь с подписками
-    # subscriptions = relationship("Subscription", back_populates="user", cascade="all, delete")
-
     def __repr__(self):
         return f"<User id={self.id} telegram_id={self.telegram_id} whatsapp_id={self.whatsapp_id}>"
 

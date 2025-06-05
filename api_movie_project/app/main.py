@@ -1,6 +1,8 @@
+from pprint import pprint
+
 import uvicorn
 
-from fastapi import FastAPI, Request
+from fastapi import FastAPI, Request, Header
 from fastapi.responses import HTMLResponse
 from fastapi.templating import Jinja2Templates
 
@@ -8,7 +10,9 @@ from starlette.responses import RedirectResponse
 
 from database.crud import get_movie_token
 
+
 app = FastAPI()
+
 
 @app.get("/")
 async def root():
@@ -19,11 +23,19 @@ async def root():
 @app.get("/get_movie/{movie_token}")
 async def redirect_to_movie(movie_token: str):
     data = await get_movie_token(movie_token)
-    url = data.get('movie_url')
-    if url:
-        return RedirectResponse(url=url)
-    return f'Срок ссылки истёк'
+    try:
+        url = data.get('movie_url')
+        if url:
+            return RedirectResponse(url=url)
+    except AttributeError:
+        return f'Срок Временной ссылки истёк!'
 
+
+# получение данных
+@app.get('/get')
+async def get_info_user(request: Request):
+    pprint(request.headers)
+    return {'headers': dict(request.headers)}
 
 if __name__ == "__main__":
     uvicorn.run("main:app", host="127.0.0.1", port=8000, reload=True)

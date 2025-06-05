@@ -254,6 +254,7 @@ async def delete_movie_token():
         except IntegrityError:
             return None
 
+
 # asyncio.run(init_db())
 # asyncio.run(delete_movie_token())
 # asyncio.run(add_plas_subscriptions(3000))
