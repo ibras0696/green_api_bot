@@ -1,11 +1,12 @@
+import asyncio
 import datetime
 
 
 from sqlalchemy.exc import IntegrityError
-from sqlalchemy import select
+from sqlalchemy import select, delete
 
-from database.db import async_session
-from database.models import User
+from database.db import async_session, init_db
+from database.models import User, MovieTime
 
 
 
@@ -193,5 +194,67 @@ async def get_user(user_id: int | str) -> dict[str, str | int | bool]:
                 "created_at": user.created_at}
 
 
+async def add_movie_token(movie_url: str):
+    '''
+    Создание токена с url
+    :param movie_url: Ссылка на фильм
+    :return: return {
+                'token': movie.id,
+                'movie_url': movie.movie_url
+            }
+    '''
+    async with async_session() as session:
+        movie = MovieTime(movie_url=movie_url)
+        try:
+            session.add(movie)
+            await session.commit()
+            await session.refresh(movie)
+
+            return movie.id
+
+        except IntegrityError as ex:
+            await session.rollback()
+            print(f'Ошибка при добавлении: {ex}')
+
+
+async def get_movie_token(token: str) -> dict[str, str] | None:
+    '''
+    Получение апи url по токену
+    :param token: Токен фильма
+    :return: {
+                'token': result.id,
+                'movie_url': result.movie_url
+            }
+    '''
+    async with async_session() as session:
+        try:
+            stmt = select(MovieTime).where(MovieTime.id == token)
+            result = (await session.execute(stmt)).scalars().first()
+            if result:
+                return {
+                    'token': result.id,
+                    'movie_url': result.movie_url
+                }
+            return None
+        except IntegrityError:
+            return None
+
+
+async def delete_movie_token():
+    '''
+    Удаления всех ссылок сразу
+    :return:
+    '''
+    async with async_session() as session:
+        try:
+            stmt = delete(MovieTime)
+            await session.execute(stmt)
+            await session.commit()
+            return True
+        except IntegrityError:
+            return None
+
+# asyncio.run(init_db())
+# asyncio.run(delete_movie_token())
 # asyncio.run(add_plas_subscriptions(3000))
 # asyncio.run(decrement_subscriptions(min_day=3000))

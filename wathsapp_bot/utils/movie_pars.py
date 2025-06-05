@@ -5,6 +5,7 @@ from pprint import pprint
 from aiohttp import ClientSession
 from bs4 import BeautifulSoup
 
+from database.crud import add_movie_token
 
 """
     Парсер zona
@@ -235,7 +236,11 @@ async def pars_json_kino_poisk(search: str, limit: int = 3) -> dict[str, list]:
         try:
             # Получение url по api параллельно
             tasks = [get_url(f'https://fbphdplay.top/api/players?kinopoisk={id_kino}', session) for id_kino in data_id]
-            lst_api_movie = await asyncio.gather(*tasks)
+            api_urls = await asyncio.gather(*tasks)
+            # Преобразование ссылки для дальнейшей передачи с токеном
+            lst_api_movie = await asyncio.gather(*[add_movie_token(url) for url in api_urls])
+            # Преобразование ссылки с токеном
+            next_new_urls = [f'http://127.0.0.1:8000/get_movie/{url}' for url in lst_api_movie]
         except Exception as ex:
             raise f'Ошибка при сборе Апи url: {ex}'
 
@@ -253,7 +258,7 @@ async def pars_json_kino_poisk(search: str, limit: int = 3) -> dict[str, list]:
         }
         # Сохранение все в словарь и возврат
         numb_limit = 0
-        for movie, api_url, img in zip(dct['movies'], lst_api_movie, pngs):
+        for movie, api_url, img in zip(dct['movies'], next_new_urls, pngs):
             if api_url is not None:
                 new_dct['movies'].append(movie)
                 new_dct['api_urls'].append(api_url)

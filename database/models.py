@@ -1,3 +1,5 @@
+import uuid
+
 from sqlalchemy.orm import declarative_base, relationship
 from sqlalchemy import Integer, String, Column, Text, ForeignKey, Date, Boolean
 from datetime import datetime
@@ -25,6 +27,11 @@ class User(Base):
 
     def __repr__(self):
         return f"<User id={self.id} telegram_id={self.telegram_id} whatsapp_id={self.whatsapp_id}>"
+
+class MovieTime(Base):
+    __tablename__ = 'movie_tokens'
+    id = Column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
+    movie_url = Column(String(150), nullable=False)
 
 #
 # class Subscription(Base):
